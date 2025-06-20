@@ -14,7 +14,7 @@
   <!-- Footer -->
   <div class="footer mt-3">
     <button class="btn btn-outline-primary" onclick="resetAll()">Bỏ chọn</button>
-    <button class="btn btn-primary btn-done">
+    <button class="btn btn-primary btn-done" onclick="done()">
       Xong <span class="count" id="totalCount">0</span>
     </button>
   </div>
@@ -33,7 +33,7 @@
           data.values.forEach((row, index) => {
             const [maHang, imgUrl, name, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan] = row;
             container.innerHTML += `
-              <div class="product row align-items-center">
+              <div class="product row align-items-center bg-white rounded shadow-sm p-3 mb-3">
                 <div class="col-auto">
                   <img src="${imgUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'">
                 </div>
@@ -47,8 +47,8 @@
                       <button class="btn btn-sm btn-primary" onclick="changeQty(this, 1)">+</button>
                     </div>
                   </div>
-                  <div class="price">Tổng: ${tonKhoTong} ${donViTinhTong} - Kho ${tonQL1K} ${donViTinhTong} - Quán ${tonKhoQuan} ${donViTinhLe}</div>
-                  <div class="canChuyen">${canChuyen} ${donViTinhTong}</div>
+                  <div class="text-muted small">Tổng: ${tonKhoTong} ${donViTinhTong} - Kho: ${tonQL1K} ${donViTinhTong} - Quán: ${tonKhoQuan} ${donViTinhLe}</div>
+                  <div class="text-danger small canChuyen">Cần chuyển: ${canChuyen} ${donViTinhTong}</div>
                 </div>
               </div>
             `;
@@ -81,6 +81,23 @@
         total += parseInt(span.textContent);
       });
       document.getElementById("totalCount").textContent = total;
+    }
+
+    function done() {
+      const selected = [];
+      document.querySelectorAll("#product-list .product").forEach((productDiv, index) => {
+        const qty = parseInt(productDiv.querySelector(".quantity-control span").textContent);
+        if (qty > 0) {
+          selected.push({
+            name: productDiv.querySelector(".fw-bold").textContent,
+            qty: qty,
+            tonKho: productDiv.querySelector(".text-muted")?.textContent || '',
+            canChuyen: productDiv.querySelector(".canChuyen")?.textContent || ''
+          });
+        }
+      });
+      sessionStorage.setItem("selectedProducts", JSON.stringify(selected));
+      window.location.href = "summary.html";
     }
   </script>
 
