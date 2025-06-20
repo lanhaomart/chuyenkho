@@ -1,22 +1,39 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Danh sách sản phẩm</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="index.css"/> 
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+  <style>
+    img { width: 100px; height: auto; border-radius: 8px; }
+    .footer {
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+    }
+    .btn-done .count {
+      background: white;
+      color: #007bff;
+      font-weight: bold;
+      padding: 2px 10px;
+      border-radius: 999px;
+    }
+  </style>
 </head>
 <body class="p-3">
-
   <div id="product-list">Đang tải dữ liệu...</div>
 
   <!-- Footer -->
   <div class="footer mt-3">
     <button class="btn btn-outline-primary" onclick="resetAll()">Bỏ chọn</button>
-    <button class="btn btn-primary btn-done" onclick="done()">
+    <a href="summary.html" class="btn btn-primary btn-done">
       Xong <span class="count" id="totalCount">0</span>
-    </button>
+    </a>
   </div>
 
   <script>
@@ -24,82 +41,63 @@
     const apiKey = 'AIzaSyDCqMkeIpx-QC7JQ1hJ4_i5Gx4hoNHvGo8';
     const range = 'Sheet1!A2:I';
 
+    let products = [];
+
     fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`)
       .then(res => res.json())
       .then(data => {
         const container = document.getElementById('product-list');
         container.innerHTML = '';
         if (data.values && data.values.length > 0) {
-          data.values.forEach((row, index) => {
+          products = data.values.map((row, index) => {
             const [maHang, imgUrl, name, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan] = row;
+            return {
+              maHang, imgUrl, name, tonKhoTong, tonQL1K, donViTinhTong,
+              donViTinhLe, canChuyen, tonKhoQuan, qty: 0
+            };
+          });
+
+          products.forEach((p, index) => {
             container.innerHTML += `
-              <div class="product row align-items-center bg-white rounded shadow-sm p-3 mb-3">
-                <div class="col-auto">
-                  <img src="${imgUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'">
-                </div>
+              <div class="product row align-items-center mb-3" data-index="${index}">
+                <div class="col-auto"><img src="${p.imgUrl}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'"></div>
                 <div class="col">
-                  <div class="promo">Promo</div>
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <div class="fw-bold">${name}</div>
+                  <div class="fw-bold">${p.name}</div>
+                  <div class="d-flex justify-content-between align-items-center mb-1">
+                    <small>Tổng: ${p.tonKhoTong} ${p.donViTinhTong} - Kho ${p.tonQL1K} ${p.donViTinhTong} - Quán ${p.tonKhoQuan} ${p.donViTinhLe}</small>
                     <div class="quantity-control">
-                      <button class="btn btn-sm btn-primary" onclick="changeQty(this, -1)">−</button>
-                      <span>0</span>
-                      <button class="btn btn-sm btn-primary" onclick="changeQty(this, 1)">+</button>
+                      <button class="btn btn-sm btn-primary" onclick="changeQty(${index}, -1)">−</button>
+                      <span id="qty-${index}">0</span>
+                      <button class="btn btn-sm btn-primary" onclick="changeQty(${index}, 1)">+</button>
                     </div>
                   </div>
-                  <div class="text-muted small">Tổng: ${tonKhoTong} ${donViTinhTong} - Kho: ${tonQL1K} ${donViTinhTong} - Quán: ${tonKhoQuan} ${donViTinhLe}</div>
-                  <div class="text-danger small canChuyen">Cần chuyển: ${canChuyen} ${donViTinhTong}</div>
                 </div>
               </div>
             `;
           });
-          updateTotal();
         } else {
           container.innerText = 'Không có dữ liệu.';
         }
-      })
-      .catch(err => {
-        document.getElementById('product-list').innerText = 'Lỗi khi tải dữ liệu: ' + err;
       });
 
-    function changeQty(button, delta) {
-      const span = button.parentNode.querySelector("span");
-      let value = parseInt(span.textContent) + delta;
-      if (value < 0) value = 0;
-      span.textContent = value;
+    function changeQty(index, delta) {
+      products[index].qty += delta;
+      if (products[index].qty < 0) products[index].qty = 0;
+      document.getElementById(`qty-${index}`).innerText = products[index].qty;
       updateTotal();
     }
 
     function resetAll() {
-      document.querySelectorAll(".quantity-control span").forEach(span => span.textContent = "0");
+      products.forEach(p => p.qty = 0);
+      products.forEach((p, i) => document.getElementById(`qty-${i}`).innerText = "0");
       updateTotal();
     }
 
     function updateTotal() {
-      let total = 0;
-      document.querySelectorAll(".quantity-control span").forEach(span => {
-        total += parseInt(span.textContent);
-      });
-      document.getElementById("totalCount").textContent = total;
-    }
-
-    function done() {
-      const selected = [];
-      document.querySelectorAll("#product-list .product").forEach((productDiv, index) => {
-        const qty = parseInt(productDiv.querySelector(".quantity-control span").textContent);
-        if (qty > 0) {
-          selected.push({
-            name: productDiv.querySelector(".fw-bold").textContent,
-            qty: qty,
-            tonKho: productDiv.querySelector(".text-muted")?.textContent || '',
-            canChuyen: productDiv.querySelector(".canChuyen")?.textContent || ''
-          });
-        }
-      });
-      sessionStorage.setItem("selectedProducts", JSON.stringify(selected));
-      window.location.href = "summary.html";
+      const total = products.reduce((sum, p) => sum + p.qty, 0);
+      document.getElementById("totalCount").innerText = total;
+      localStorage.setItem("selectedProducts", JSON.stringify(products.filter(p => p.qty > 0)));
     }
   </script>
-
 </body>
 </html>
