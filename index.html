@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Danh sách sản phẩm</title>
+  <title>Chọn sản phẩm</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
     img { width: 100px; height: auto; border-radius: 8px; }
@@ -26,9 +26,9 @@
   </style>
 </head>
 <body class="p-3">
+
   <div id="product-list">Đang tải dữ liệu...</div>
 
-  <!-- Footer -->
   <div class="footer mt-3">
     <button class="btn btn-outline-primary" onclick="resetAll()">Bỏ chọn</button>
     <a href="summary.html" class="btn btn-primary btn-done">
@@ -39,7 +39,7 @@
   <script>
     const sheetId = '1aUBO9WsNhh_a3Cqe26qjVirFkMGtHAgg52aPydQoQH4';
     const apiKey = 'AIzaSyDCqMkeIpx-QC7JQ1hJ4_i5Gx4hoNHvGo8';
-    const range = 'Sheet1!A2:I';
+    const range = 'Sheet1!A2:I'; // Giả sử dữ liệu từ A2
 
     let products = [];
 
@@ -48,36 +48,41 @@
       .then(data => {
         const container = document.getElementById('product-list');
         container.innerHTML = '';
-        if (data.values && data.values.length > 0) {
-          products = data.values.map((row, index) => {
-            const [maHang, imgUrl, name, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan] = row;
-            return {
-              maHang, imgUrl, name, tonKhoTong, tonQL1K, donViTinhTong,
-              donViTinhLe, canChuyen, tonKhoQuan, qty: 0
-            };
-          });
 
-          products.forEach((p, index) => {
-            container.innerHTML += `
-              <div class="product row align-items-center mb-3" data-index="${index}">
-                <div class="col-auto"><img src="${p.imgUrl}" alt="${p.name}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'"></div>
-                <div class="col">
-                  <div class="fw-bold">${p.name}</div>
-                  <div class="d-flex justify-content-between align-items-center mb-1">
-                    <small>Tổng: ${p.tonKhoTong} ${p.donViTinhTong} - Kho ${p.tonQL1K} ${p.donViTinhTong} - Quán ${p.tonKhoQuan} ${p.donViTinhLe}</small>
-                    <div class="quantity-control">
-                      <button class="btn btn-sm btn-primary" onclick="changeQty(${index}, -1)">−</button>
-                      <span id="qty-${index}">0</span>
-                      <button class="btn btn-sm btn-primary" onclick="changeQty(${index}, 1)">+</button>
-                    </div>
+        if (!data.values || data.values.length === 0) {
+          container.innerText = 'Không có dữ liệu.';
+          return;
+        }
+
+        products = data.values.map((row, i) => {
+          const [maHang, imgUrl, tenSP, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan] = row;
+          return {
+            maHang, imgUrl, tenSP,
+            tonQL1K: parseInt(tonQL1K || 0),
+            qty: 0
+          };
+        });
+
+        products.forEach((p, i) => {
+          container.innerHTML += `
+            <div class="row align-items-center mb-3" data-index="${i}">
+              <div class="col-auto">
+                <img src="${p.imgUrl}" alt="${p.tenSP}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'">
+              </div>
+              <div class="col">
+                <div class="fw-bold">${p.tenSP}</div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div><small>Tồn kho kho quản lý: ${p.tonQL1K}</small></div>
+                  <div>
+                    <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
+                    <span id="qty-${i}">0</span>
+                    <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
                   </div>
                 </div>
               </div>
-            `;
-          });
-        } else {
-          container.innerText = 'Không có dữ liệu.';
-        }
+            </div>
+          `;
+        });
       });
 
     function changeQty(index, delta) {
@@ -88,15 +93,25 @@
     }
 
     function resetAll() {
-      products.forEach(p => p.qty = 0);
-      products.forEach((p, i) => document.getElementById(`qty-${i}`).innerText = "0");
+      products.forEach((p, i) => {
+        p.qty = 0;
+        document.getElementById(`qty-${i}`).innerText = 0;
+      });
       updateTotal();
     }
 
     function updateTotal() {
-      const total = products.reduce((sum, p) => sum + p.qty, 0);
+      const selected = products.filter(p => p.qty > 0).map(p => ({
+        maHang: p.maHang,
+        tenSP: p.tenSP,
+        soLuong: p.qty,
+        tonQL1K: p.tonQL1K
+      }));
+
+      localStorage.setItem("selectedProducts", JSON.stringify(selected));
+
+      const total = selected.reduce((sum, p) => sum + p.soLuong, 0);
       document.getElementById("totalCount").innerText = total;
-      localStorage.setItem("selectedProducts", JSON.stringify(products.filter(p => p.qty > 0)));
     }
   </script>
 </body>
