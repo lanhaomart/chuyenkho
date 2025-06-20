@@ -1,0 +1,65 @@
+    .canChuyen {
+      background: rgb(75, 96, 255);
+      color: white;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 14px;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+
+    body {
+      background: #f2f2f2;
+    }
+    .product {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      padding: 16px;
+      margin-bottom: 16px;
+    }
+    .product img {
+      width: 100%;
+      max-width: 100px;
+      border-radius: 8px;
+    }
+
+    .price {
+      font-size: 16px;
+      font-weight: bold;
+      color: #000;
+    }
+    .price del {
+      color: gray;
+      font-size: 14px;
+      margin-left: 10px;
+    }
+    .quantity-control button {
+      padding: 4px 12px;
+      font-size: 18px;
+    }
+    .quantity-control span {
+      min-width: 32px;
+      text-align: center;
+      font-size: 16px;
+      display: inline-block;
+    }
+    .footer {
+      position: sticky;
+      bottom: 0;
+      background: #fff;
+      padding: 12px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
+      border-top: 1px solid #ddd;
+    }
+    .btn-done .count {
+      background: white;
+      color: #007bff;
+      font-weight: bold;
+      padding: 2px 10px;
+      border-radius: 999px;
+      margin-left: 8px;
+    }

@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Danh sách sản phẩm</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="index.css"/> 
+</head>
+<body class="p-3">
+
+  <div id="product-list">Đang tải dữ liệu...</div>
+
+  <!-- Footer -->
+  <div class="footer mt-3">
+    <button class="btn btn-outline-primary" onclick="resetAll()">Bỏ chọn</button>
+    <button class="btn btn-primary btn-done">
+      Xong <span class="count" id="totalCount">0</span>
+    </button>
+  </div>
+
+  <script>
+    const sheetId = '1aUBO9WsNhh_a3Cqe26qjVirFkMGtHAgg52aPydQoQH4';
+    const apiKey = 'AIzaSyDCqMkeIpx-QC7JQ1hJ4_i5Gx4hoNHvGo8';
+    const range = 'Sheet1!A2:I';
+
+    fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`)
+      .then(res => res.json())
+      .then(data => {
+        const container = document.getElementById('product-list');
+        container.innerHTML = '';
+        if (data.values && data.values.length > 0) {
+          data.values.forEach((row, index) => {
+            const [maHang, imgUrl, name, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan] = row;
+            container.innerHTML += `
+              <div class="product row align-items-center">
+                <div class="col-auto">
+                  <img src="${imgUrl}" alt="${name}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'">
+                </div>
+                <div class="col">
+                  <div class="promo">Promo</div>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="fw-bold">${name}</div>
+                    <div class="quantity-control">
+                      <button class="btn btn-sm btn-primary" onclick="changeQty(this, -1)">−</button>
+                      <span>0</span>
+                      <button class="btn btn-sm btn-primary" onclick="changeQty(this, 1)">+</button>
+                    </div>
+                  </div>
+                  <div class="price">Tổng: ${tonKhoTong} ${donViTinhTong} - Kho ${tonQL1K} ${donViTinhTong} - Quán ${tonKhoQuan} ${donViTinhLe}</div>
+                  <div class="canChuyen">${canChuyen} ${donViTinhTong}</div>
+                </div>
+              </div>
+            `;
+          });
+          updateTotal();
+        } else {
+          container.innerText = 'Không có dữ liệu.';
+        }
+      })
+      .catch(err => {
+        document.getElementById('product-list').innerText = 'Lỗi khi tải dữ liệu: ' + err;
+      });
+
+    function changeQty(button, delta) {
+      const span = button.parentNode.querySelector("span");
+      let value = parseInt(span.textContent) + delta;
+      if (value < 0) value = 0;
+      span.textContent = value;
+      updateTotal();
+    }
+
+    function resetAll() {
+      document.querySelectorAll(".quantity-control span").forEach(span => span.textContent = "0");
+      updateTotal();
+    }
+
+    function updateTotal() {
+      let total = 0;
+      document.querySelectorAll(".quantity-control span").forEach(span => {
+        total += parseInt(span.textContent);
+      });
+      document.getElementById("totalCount").textContent = total;
+    }
+  </script>
+
+</body>
+</html>
