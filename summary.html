@@ -1,60 +1,72 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Sản phẩm đã chọn</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <title>Tóm tắt xuất hàng</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
 </head>
-<body class="p-4 bg-light">
-
+<body class="p-3">
   <h4 class="mb-4">Danh sách sản phẩm đã chọn</h4>
-  <div class="table-responsive">
-    <table class="table table-bordered table-striped">
-      <thead class="table-primary">
-        <tr>
-          <th>STT</th>
-          <th>Tên sản phẩm</th>
-          <th>Số lượng</th>
-          <th>Tồn kho</th>
-          <th>Cần chuyển</th>
-        </tr>
-      </thead>
-      <tbody id="summary-table">
-        <!-- Dữ liệu được chèn tại đây -->
-      </tbody>
-    </table>
-  </div>
+  <table class="table table-bordered">
+    <thead>
+      <tr>
+        <th>Mã hàng</th>
+        <th>Tên sản phẩm</th>
+        <th>Số lượng xuất</th>
+        <th>Còn lại</th>
+      </tr>
+    </thead>
+    <tbody id="summary-body"></tbody>
+  </table>
 
-  <div class="text-end mt-4">
-    <button class="btn btn-success" onclick="capNhat()">Cập nhật</button>
-  </div>
+  <button class="btn btn-success" onclick="submitData()">Cập nhật</button>
 
   <script>
-    const selected = JSON.parse(sessionStorage.getItem("selectedProducts") || "[]");
-    const tbody = document.getElementById("summary-table");
+    const webAppUrl = "https://script.google.com/macros/s/AKfycbyQZNmXsfIE0ImW3sv8hBZ5mw2_KTuUIEDByOTbgQ51ikj8ghNaAV9XAS344xKOP1feJQ/exec";
+    const tbody = document.getElementById("summary-body");
+    const selected = JSON.parse(localStorage.getItem("selectedProducts") || "[]");
 
-    if (selected.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Không có sản phẩm nào được chọn</td></tr>`;
-    } else {
-      selected.forEach((item, index) => {
-        tbody.innerHTML += `
-          <tr>
-            <td>${index + 1}</td>
-            <td>${item.name}</td>
-            <td>${item.qty}</td>
-            <td>${item.tonKho}</td>
-            <td>${item.canChuyen}</td>
-          </tr>
-        `;
-      });
-    }
+    const rowsToSend = selected.map(p => {
+      const conLai = parseFloat(p.tonQL1K || 0) - parseInt(p.qty);
+      const now = new Date();
+      const datetime = now.toLocaleDateString('vi-VN') + ' ' + now.toLocaleTimeString('vi-VN');
+      return {
+        datetime,
+        maHang: p.maHang,
+        tenSP: p.name,
+        soLuong: p.qty,
+        conLai
+      };
+    });
 
-    function capNhat() {
-      alert("Đã cập nhật thành công!");
-      // Hoặc xử lý gửi dữ liệu đến server tại đây
+    rowsToSend.forEach(row => {
+      tbody.innerHTML += `
+        <tr>
+          <td>${row.maHang}</td>
+          <td>${row.tenSP}</td>
+          <td>${row.soLuong}</td>
+          <td>${row.conLai}</td>
+        </tr>
+      `;
+    });
+
+    function submitData() {
+      fetch(webAppUrl, {
+        method: "POST",
+        body: JSON.stringify(rowsToSend),
+        headers: { "Content-Type": "application/json" }
+      })
+        .then(res => res.text())
+        .then(res => {
+          alert("Đã cập nhật thành công!");
+          localStorage.removeItem("selectedProducts");
+          window.location.href = "index.html";
+        })
+        .catch(err => {
+          alert("Lỗi khi gửi dữ liệu: " + err);
+        });
     }
   </script>
-
 </body>
 </html>
