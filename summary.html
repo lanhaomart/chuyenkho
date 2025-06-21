@@ -56,21 +56,19 @@
     function sendData() {
       const url = "https://script.google.com/macros/s/AKfycbyQZNmXsfIE0ImW3sv8hBZ5mw2_KTuUIEDByOTbgQ51ikj8ghNaAV9XAS344xKOP1feJQ/exec";
 
-      fetch(url, {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sheetData)
-      })
-      .then(() => {
-        alert("Đã gửi dữ liệu thành công!");
-        localStorage.removeItem("selectedProducts");
-        window.location.href = "index.html";
-      })
-      .catch(err => {
-        alert("Lỗi khi gửi dữ liệu: " + err);
-        console.error(err);
-      });
+fetch(url, {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify(sheetData)
+})
+.then(res => res.text())
+.then(text => {
+  alert("Phản hồi từ server: " + text);
+})
+.catch(err => {
+  alert("Lỗi khi gửi dữ liệu: " + err);
+  console.error(err);
+});
     }
 
     renderTable();
