@@ -2,38 +2,20 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Chọn sản phẩm</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Danh sách sản phẩm</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
-  <style>
-    img { width: 100px; height: auto; border-radius: 8px; }
-    .footer {
-      position: sticky;
-      bottom: 0;
-      background: #fff;
-      padding: 12px 20px;
-      display: flex;
-      justify-content: space-between;
-      box-shadow: 0 -2px 8px rgba(0,0,0,0.1);
-    }
-    .btn-done .count {
-      background: white;
-      color: #007bff;
-      font-weight: bold;
-      padding: 2px 10px;
-      border-radius: 999px;
-    }
-  </style>
 </head>
-<body class="p-3">
+<body class="p-3 bg-light">
 
-  <div id="product-list">Đang tải dữ liệu...</div>
+  <div id="product-list" class="mb-5">Đang tải dữ liệu...</div>
 
-  <div class="footer mt-3">
+  <!-- Footer -->
+  <div class="footer position-fixed bottom-0 start-0 end-0 bg-white p-3 shadow d-flex justify-content-between">
     <button class="btn btn-outline-primary" onclick="resetAll()">Bỏ chọn</button>
-    <a href="summary.html" class="btn btn-primary btn-done">
-      Xong <span class="count" id="totalCount">0</span>
-    </a>
+    <button class="btn btn-primary btn-done">
+      Xong <span class="count badge bg-light text-primary" id="totalCount">0</span>
+    </button>
   </div>
 
   <script>
@@ -41,78 +23,81 @@
     const apiKey = 'AIzaSyDCqMkeIpx-QC7JQ1hJ4_i5Gx4hoNHvGo8';
     const range = 'Sheet1!A2:I';
 
-    let products = [];
-
     fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`)
       .then(res => res.json())
       .then(data => {
         const container = document.getElementById('product-list');
         container.innerHTML = '';
+        if (data.values && data.values.length > 0) {
+          data.values.forEach(row => {
+            const [maHang, imgUrl, name, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan] = row;
 
-        if (!data.values || data.values.length === 0) {
-          container.innerText = 'Không có dữ liệu.';
-          return;
-        }
-
-        products = data.values.map((row, i) => {
-          const [maHang, imgUrl, tenSP, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan] = row;
-          return {
-            maHang, imgUrl, tenSP,
-            tonQL1K: parseInt(tonQL1K || 0),
-            qty: 0
-          };
-        });
-
-        products.forEach((p, i) => {
-          container.innerHTML += `
-            <div class="row align-items-center mb-3" data-index="${i}">
-              <div class="col-auto">
-                <img src="${p.imgUrl}" alt="${p.tenSP}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'">
-              </div>
-              <div class="col">
-                <div class="fw-bold">${p.tenSP}</div>
-                <div class="d-flex justify-content-between align-items-center">
-                  <div><small>Tồn kho kho quản lý: ${p.tonQL1K}</small></div>
-                  <div>
-                    <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
-                    <span id="qty-${i}">0</span>
-                    <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
+            container.innerHTML += `
+              <div class="product row align-items-center mb-3 bg-white p-3 rounded shadow-sm"
+                   data-tonql1k="${tonQL1K}">
+                <div class="col-auto">
+                  <img src="${imgUrl}" alt="${name}" width="80" onerror="this.src='https://via.placeholder.com/80x80?text=No+Image'" class="rounded">
+                </div>
+                <div class="col">
+                  <div class="text-danger small mb-1">Promo</div>
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="fw-bold">${name}</div>
+                    <div class="quantity-control d-flex align-items-center gap-2">
+                      <button class="btn btn-sm btn-primary" onclick="changeQty(this, -1)">−</button>
+                      <span class="qty-value">0</span>
+                      <button class="btn btn-sm btn-primary" onclick="changeQty(this, 1)">+</button>
+                    </div>
                   </div>
+                  <div class="text-muted small">Tổng: ${tonKhoTong} ${donViTinhTong} - Kho: ${tonQL1K} ${donViTinhTong} - Quán: ${tonKhoQuan} ${donViTinhLe}</div>
+                  <div class="small text-secondary">Cần chuyển: ${canChuyen} ${donViTinhTong}</div>
                 </div>
               </div>
-            </div>
-          `;
-        });
+            `;
+          });
+          updateTotal();
+        } else {
+          container.innerText = 'Không có dữ liệu.';
+        }
+      })
+      .catch(err => {
+        document.getElementById('product-list').innerText = 'Lỗi khi tải dữ liệu: ' + err;
       });
 
-    function changeQty(index, delta) {
-      products[index].qty += delta;
-      if (products[index].qty < 0) products[index].qty = 0;
-      document.getElementById(`qty-${index}`).innerText = products[index].qty;
+    function changeQty(button, delta) {
+      const span = button.parentNode.querySelector(".qty-value");
+      let value = parseInt(span.textContent) + delta;
+      if (value < 0) value = 0;
+      span.textContent = value;
       updateTotal();
     }
 
     function resetAll() {
-      products.forEach((p, i) => {
-        p.qty = 0;
-        document.getElementById(`qty-${i}`).innerText = 0;
-      });
+      document.querySelectorAll(".qty-value").forEach(span => span.textContent = "0");
       updateTotal();
     }
 
     function updateTotal() {
-      const selected = products.filter(p => p.qty > 0).map(p => ({
-        maHang: p.maHang,
-        tenSP: p.tenSP,
-        soLuong: p.qty,
-        tonQL1K: p.tonQL1K
-      }));
-
-      localStorage.setItem("selectedProducts", JSON.stringify(selected));
-
-      const total = selected.reduce((sum, p) => sum + p.soLuong, 0);
-      document.getElementById("totalCount").innerText = total;
+      let total = 0;
+      document.querySelectorAll(".qty-value").forEach(span => {
+        total += parseInt(span.textContent);
+      });
+      document.getElementById("totalCount").textContent = total;
     }
+
+    document.querySelector(".btn-done").addEventListener("click", () => {
+      const selectedProducts = [];
+      document.querySelectorAll(".product").forEach(product => {
+        const qty = parseInt(product.querySelector(".qty-value").textContent);
+        if (qty > 0) {
+          const name = product.querySelector(".fw-bold").textContent;
+          const tonQL1K = parseFloat(product.dataset.tonql1k) || 0;
+          selectedProducts.push({ name, qty, tonQL1K });
+        }
+      });
+      sessionStorage.setItem("selectedProducts", JSON.stringify(selectedProducts));
+      window.location.href = "summary.html";
+    });
   </script>
+
 </body>
 </html>
