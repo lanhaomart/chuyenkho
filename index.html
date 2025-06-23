@@ -27,6 +27,11 @@
 </head>
 <body class="p-3">
 
+  <!-- Thanh tìm kiếm -->
+  <div class="mb-3">
+    <input type="text" class="form-control" id="searchBox" placeholder="Tìm kiếm sản phẩm..." oninput="filterProducts()">
+  </div>
+
   <div id="product-list">Đang tải dữ liệu...</div>
 
   <div class="footer mt-3">
@@ -39,9 +44,10 @@
   <script>
     const sheetId = '1aUBO9WsNhh_a3Cqe26qjVirFkMGtHAgg52aPydQoQH4';
     const apiKey = 'AIzaSyDCqMkeIpx-QC7JQ1hJ4_i5Gx4hoNHvGo8';
-    const range = 'Sheet1!A2:I'; // Giả sử dữ liệu từ A2
+    const range = 'Sheet1!A2:I';
 
     let products = [];
+    let allProducts = [];
 
     fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`)
       .then(res => res.json())
@@ -54,7 +60,7 @@
           return;
         }
 
-        products = data.values.map((row, i) => {
+        allProducts = data.values.map((row) => {
           const [maHang, imgUrl, tenSP, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan] = row;
           return {
             maHang, imgUrl, tenSP, canChuyen, tonKhoQuan,
@@ -63,52 +69,69 @@
           };
         });
 
-        products.forEach((p, i) => {
-          container.innerHTML += `
-            <div class="row align-items-center mb-3" data-index="${i}">
-              <div class="col-auto">
-                <img src="${p.imgUrl}" alt="${p.tenSP}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'">
-              </div>
-              <div class="col">
-                <div class="fw-bold">${p.tenSP}</div>
-                
-                <div class="d-flex justify-content-between align-items-center">
-                  <div><small>Kho tổng: ${p.tonQL1K}</small></div>
+        products = allProducts;
+        renderProducts();
+      });
 
-                  <div class="d-flex justify-content-between align-items-center">
-                  <div><small>${p.tonKhoQuan}</small></div>
-                  
-                  <div class="d-flex justify-content-between align-items-center">
-                  <div><small>Cần chuyển: ${p.canChuyen}</small></div>
-                  
-                    <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
-                    <span id="qty-${i}">0</span>
-                    <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
-                  </div>
+    function renderProducts() {
+      const container = document.getElementById('product-list');
+      container.innerHTML = '';
+
+      products.forEach((p, i) => {
+        container.innerHTML += `
+          <div class="row align-items-center mb-3" data-index="${i}">
+            <div class="col-auto">
+              <img src="${p.imgUrl}" alt="${p.tenSP}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'">
+            </div>
+            <div class="col">
+              <div class="fw-bold">${p.tenSP}</div>
+
+              <div class="d-flex justify-content-between align-items-center">
+                <div><small>Kho tổng: ${p.tonQL1K}</small></div>
+                <div><small>${p.tonKhoQuan}</small></div>
+                <div><small>Cần chuyển: ${p.canChuyen}</small></div>
+
+                <div class="d-flex align-items-center">
+                  <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
+                  <span id="qty-${i}">${p.qty}</span>
+                  <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
                 </div>
               </div>
             </div>
-          `;
-        });
+          </div>
+        `;
       });
+    }
+
+    function filterProducts() {
+      const keyword = document.getElementById('searchBox').value.toLowerCase();
+      products = allProducts.filter(p =>
+        p.tenSP.toLowerCase().includes(keyword) ||
+        p.maHang.toLowerCase().includes(keyword)
+      );
+      renderProducts();
+    }
 
     function changeQty(index, delta) {
-      products[index].qty += delta;
-      if (products[index].qty < 0) products[index].qty = 0;
-      document.getElementById(`qty-${index}`).innerText = products[index].qty;
+      const matchedProduct = products[index];
+      matchedProduct.qty += delta;
+      if (matchedProduct.qty < 0) matchedProduct.qty = 0;
+
+      const globalIndex = allProducts.findIndex(p => p.maHang === matchedProduct.maHang);
+      allProducts[globalIndex].qty = matchedProduct.qty;
+
+      document.getElementById(`qty-${index}`).innerText = matchedProduct.qty;
       updateTotal();
     }
 
     function resetAll() {
-      products.forEach((p, i) => {
-        p.qty = 0;
-        document.getElementById(`qty-${i}`).innerText = 0;
-      });
+      allProducts.forEach(p => p.qty = 0);
+      filterProducts(); // để render lại giao diện
       updateTotal();
     }
 
     function updateTotal() {
-      const selected = products.filter(p => p.qty > 0).map(p => ({
+      const selected = allProducts.filter(p => p.qty > 0).map(p => ({
         maHang: p.maHang,
         tenSP: p.tenSP,
         soLuong: p.qty,
