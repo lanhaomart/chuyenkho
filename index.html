@@ -130,43 +130,44 @@
       updateTotal();
     }
 
-    function enableEditQty(index) {
-      const span = document.getElementById(`qty-${index}`);
-      const currentQty = span.textContent;
+function enableEditQty(index) {
+  const span = document.getElementById(`qty-${index}`);
+  const currentQty = span.textContent;
 
-      const input = document.createElement('input');
-      input.type = 'number';
-      input.value = currentQty;
-      input.style.width = '50px';
-      input.className = 'form-control form-control-sm';
-      input.onblur = () => saveQty(index, input.value);
-      input.onkeydown = (e) => {
-        if (e.key === 'Enter') input.blur();
-      };
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.value = currentQty;
+  input.style.width = '50px';
+  input.className = 'form-control form-control-sm';
 
-      span.replaceWith(input);
-      input.focus();
-    }
+  input.onblur = () => saveQty(index, input);
+  input.onkeydown = (e) => {
+    if (e.key === 'Enter') input.blur();
+  };
 
-    function saveQty(index, value) {
-      let qty = parseInt(value);
-      if (isNaN(qty) || qty < 0) qty = 0;
+  span.replaceWith(input);
+  input.focus();
+}
 
-      products[index].qty = qty;
-      const globalIndex = allProducts.findIndex(p => p.maHang === products[index].maHang);
-      allProducts[globalIndex].qty = qty;
+function saveQty(index, inputElem) {
+  let qty = parseInt(inputElem.value);
+  if (isNaN(qty) || qty < 0) qty = 0;
 
-      const newSpan = document.createElement('span');
-      newSpan.id = `qty-${index}`;
-      newSpan.textContent = qty;
-      newSpan.style.cursor = 'pointer';
-      newSpan.onclick = () => enableEditQty(index);
+  products[index].qty = qty;
+  const globalIndex = allProducts.findIndex(p => p.maHang === products[index].maHang);
+  allProducts[globalIndex].qty = qty;
 
-      const inputElem = document.activeElement;
-      inputElem.replaceWith(newSpan);
+  const newSpan = document.createElement('span');
+  newSpan.id = `qty-${index}`;
+  newSpan.textContent = qty;
+  newSpan.style.cursor = 'pointer';
+  newSpan.onclick = () => enableEditQty(index);
 
-      updateTotal();
-    }
+  inputElem.replaceWith(newSpan);
+
+  updateTotal();
+}
+
 
     function resetAll() {
       products.forEach((p, i) => {
