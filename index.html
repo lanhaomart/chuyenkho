@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -6,7 +7,7 @@
   <title>Chọn sản phẩm</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
   <style>
-        img { width: 50px; height: auto; border-radius: 8px; }
+    img { width: 50px; height: auto; border-radius: 8px; }
     .footer {
       position: sticky;
       bottom: 0;
@@ -23,32 +24,41 @@
       padding: 2px 10px;
       border-radius: 999px;
     }
+    .qty-controls {
+      display: none;
+      gap: 5px;
+      align-items: center;
+    }
+    .show-controls .qty-controls {
+      display: flex !important;
+    }
     .search-bar {
       position: relative;
-      margin-bottom: 15px;
+      margin-bottom: 1rem;
     }
     .search-bar input {
-      width: 100%;
       padding-right: 30px;
     }
-    .search-bar button {
+    .search-bar .clear-btn {
       position: absolute;
-      right: 5px;
       top: 50%;
+      right: 10px;
       transform: translateY(-50%);
-      background: none;
+      background: transparent;
       border: none;
-      font-size: 18px;
-      color: #aaa;
+      font-size: 16px;
       cursor: pointer;
+      display: none;
+    }
+    .search-bar input:not(:placeholder-shown) + .clear-btn {
+      display: block;
     }
   </style>
 </head>
 <body class="p-3">
-
   <div class="search-bar">
-    <input type="text" id="searchInput" class="form-control" placeholder="Tìm sản phẩm..." oninput="renderProducts()" />
-    <button onclick="clearSearch()">×</button>
+    <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm sản phẩm..." oninput="filterProducts()" />
+    <button class="clear-btn" onclick="clearSearch()">×</button>
   </div>
 
   <div id="product-list">Đang tải dữ liệu...</div>
@@ -64,19 +74,20 @@
     const sheetId = '1aUBO9WsNhh_a3Cqe26qjVirFkMGtHAgg52aPydQoQH4';
     const apiKey = 'AIzaSyDCqMkeIpx-QC7JQ1hJ4_i5Gx4hoNHvGo8';
     const range = 'Sheet1!A2:I';
-
-    let allProducts = [];
     let products = [];
 
     fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`)
       .then(res => res.json())
       .then(data => {
+        const container = document.getElementById('product-list');
+        container.innerHTML = '';
+
         if (!data.values || data.values.length === 0) {
-          document.getElementById('product-list').innerText = 'Không có dữ liệu.';
+          container.innerText = 'Không có dữ liệu.';
           return;
         }
 
-        allProducts = data.values.map((row, i) => {
+        products = data.values.map((row, i) => {
           const [maHang, imgUrl, tenSP, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan] = row;
           return {
             maHang, imgUrl, tenSP, canChuyen, tonKhoQuan,
@@ -85,42 +96,44 @@
           };
         });
 
-        products = [...allProducts];
         renderProducts();
       });
 
     function renderProducts() {
       const container = document.getElementById('product-list');
-      const searchText = document.getElementById('searchInput').value.toLowerCase();
-
       container.innerHTML = '';
-
-      products = allProducts.filter(p => p.tenSP.toLowerCase().includes(searchText));
-
       products.forEach((p, i) => {
-        container.innerHTML += `
-          <div class="row align-items-center mb-3" data-index="${i}">
-            <div class="col-auto">
-              <img src="${p.imgUrl}" alt="${p.tenSP}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'">
-            </div>
-            <div class="col">
-              <div class="fw-bold">${p.tenSP}</div>
-              <div class="d-flex justify-content-between align-items-center">
-                <div><small>Kho tổng: ${p.tonQL1K}</small></div>
-                <div class="d-flex align-items-center gap-2">
-                  <div><small>${p.tonKhoQuan}</small></div>
-                  <div><small>Cần chuyển: ${p.canChuyen}</small></div>
-                  <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
-                  <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">${p.qty}</span>
-                  <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
-                </div>
-              </div>
-            </div>
+        const row = document.createElement('div');
+        row.className = 'row align-items-center mb-3';
+        row.id = `product-${i}`;
+        row.setAttribute('data-index', i);
+
+        row.innerHTML = `
+          <div class="col-auto" onclick="activateProduct(${i})" style="cursor:pointer">
+            <img src="${p.imgUrl}" alt="${p.tenSP}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'">
+          </div>
+          <div class="col" onclick="activateProduct(${i})" style="cursor:pointer">
+            <div class="fw-bold">${p.tenSP}</div>
+            <div><small>Kho tổng: ${p.tonQL1K}</small></div>
+            <div><small>${p.tonKhoQuan}</small></div>
+            <div><small>Cần chuyển: ${p.canChuyen}</small></div>
+          </div>
+          <div class="col-auto qty-controls">
+            <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
+            <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">0</span>
+            <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
           </div>
         `;
+        container.appendChild(row);
       });
+    }
 
-      updateTotal();
+    function activateProduct(index) {
+      const productElem = document.getElementById(`product-${index}`);
+      productElem.classList.add('show-controls');
+      if (products[index].qty === 0) {
+        changeQty(index, 1);
+      }
     }
 
     function changeQty(index, delta) {
@@ -130,72 +143,65 @@
       updateTotal();
     }
 
-function enableEditQty(index) {
-  const span = document.getElementById(`qty-${index}`);
-  const currentQty = span.textContent;
+    function enableEditQty(index) {
+      const qtySpan = document.getElementById(`qty-${index}`);
+      const input = document.createElement("input");
+      input.type = "number";
+      input.min = "0";
+      input.value = products[index].qty;
+      input.className = "form-control form-control-sm";
+      input.style.width = "60px";
 
-  const input = document.createElement('input');
-  input.type = 'number';
-  input.value = currentQty;
-  input.style.width = '50px';
-  input.className = 'form-control form-control-sm';
+      input.addEventListener("blur", () => {
+        let val = parseInt(input.value);
+        if (isNaN(val) || val < 0) val = 0;
+        products[index].qty = val;
+        qtySpan.innerText = val;
+        qtySpan.style.display = "";
+        input.replaceWith(qtySpan);
+        updateTotal();
+      });
 
-  input.onblur = () => saveQty(index, input);
-  input.onkeydown = (e) => {
-    if (e.key === 'Enter') input.blur();
-  };
-
-  span.replaceWith(input);
-  input.focus();
-}
-
-function saveQty(index, inputElem) {
-  let qty = parseInt(inputElem.value);
-  if (isNaN(qty) || qty < 0) qty = 0;
-
-  products[index].qty = qty;
-  const globalIndex = allProducts.findIndex(p => p.maHang === products[index].maHang);
-  allProducts[globalIndex].qty = qty;
-
-  const newSpan = document.createElement('span');
-  newSpan.id = `qty-${index}`;
-  newSpan.textContent = qty;
-  newSpan.style.cursor = 'pointer';
-  newSpan.onclick = () => enableEditQty(index);
-
-  inputElem.replaceWith(newSpan);
-
-  updateTotal();
-}
-
+      qtySpan.replaceWith(input);
+      input.focus();
+    }
 
     function resetAll() {
       products.forEach((p, i) => {
         p.qty = 0;
-        const span = document.getElementById(`qty-${i}`);
-        if (span) span.textContent = 0;
+        document.getElementById(`qty-${i}`).innerText = 0;
+        document.getElementById(`product-${i}`).classList.remove("show-controls");
       });
-      allProducts.forEach(p => p.qty = 0);
       updateTotal();
     }
 
     function updateTotal() {
-      const selected = allProducts.filter(p => p.qty > 0).map(p => ({
+      const selected = products.filter(p => p.qty > 0).map(p => ({
         maHang: p.maHang,
         tenSP: p.tenSP,
         soLuong: p.qty,
         tonQL1K: p.tonQL1K
       }));
-
       localStorage.setItem("selectedProducts", JSON.stringify(selected));
-
       const total = selected.reduce((sum, p) => sum + p.soLuong, 0);
       document.getElementById("totalCount").innerText = total;
     }
 
+    function filterProducts() {
+      const keyword = document.getElementById('searchInput').value.toLowerCase();
+      products.forEach((p, i) => {
+        const row = document.getElementById(`product-${i}`);
+        if (p.tenSP.toLowerCase().includes(keyword) || p.maHang.toLowerCase().includes(keyword)) {
+          row.style.display = "";
+        } else {
+          row.style.display = "none";
+        }
+      });
+    }
+
     function clearSearch() {
-      document.getElementById("searchInput").value = "";
-      renderProducts();
+      document.getElementById('searchInput').value = '';
+      filterProducts();
     }
   </script>
 </body>
