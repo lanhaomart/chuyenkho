@@ -23,13 +23,35 @@
       padding: 2px 10px;
       border-radius: 999px;
     }
+    .search-wrapper {
+      position: relative;
+    }
+    .search-wrapper input {
+      padding-right: 35px;
+    }
+    .clear-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      font-size: 20px;
+      line-height: 1;
+      color: #999;
+      cursor: pointer;
+    }
+    .clear-btn:hover {
+      color: #333;
+    }
   </style>
 </head>
 <body class="p-3">
 
-  <!-- Thanh tìm kiếm -->
-  <div class="mb-3">
+  <!-- Thanh tìm kiếm có nút X -->
+  <div class="search-wrapper mb-3">
     <input type="text" class="form-control" id="searchBox" placeholder="Tìm kiếm sản phẩm..." oninput="filterProducts()">
+    <button class="clear-btn" onclick="clearSearch()" title="Xoá tìm kiếm">×</button>
   </div>
 
   <div id="product-list">Đang tải dữ liệu...</div>
@@ -85,7 +107,6 @@
             </div>
             <div class="col">
               <div class="fw-bold">${p.tenSP}</div>
-
               <div class="d-flex justify-content-between align-items-center">
                 <div><small>Kho tổng: ${p.tonQL1K}</small></div>
                 <div><small>${p.tonKhoQuan}</small></div>
@@ -112,6 +133,12 @@
       renderProducts();
     }
 
+    function clearSearch() {
+      document.getElementById('searchBox').value = '';
+      products = allProducts;
+      renderProducts();
+    }
+
     function changeQty(index, delta) {
       const matchedProduct = products[index];
       matchedProduct.qty += delta;
@@ -126,7 +153,7 @@
 
     function resetAll() {
       allProducts.forEach(p => p.qty = 0);
-      filterProducts(); // để render lại giao diện
+      filterProducts();
       updateTotal();
     }
 
