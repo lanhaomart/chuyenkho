@@ -57,10 +57,8 @@
         products = data.values.map((row, i) => {
           const [maHang, imgUrl, tenSP, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan] = row;
           return {
-            maHang, imgUrl, tenSP,
+            maHang, imgUrl, tenSP, canChuyen, tonKhoQuan,
             tonQL1K: parseInt(tonQL1K || 0),
-            canChuyen: parseInt(canChuyen || 0),
-            tonKhoQuan: parseInt(tonKhoQuan || 0),
             qty: 0
           };
         });
