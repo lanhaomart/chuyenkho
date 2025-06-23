@@ -23,35 +23,32 @@
       padding: 2px 10px;
       border-radius: 999px;
     }
-    .search-wrapper {
+    .search-bar {
       position: relative;
+      margin-bottom: 15px;
     }
-    .search-wrapper input {
-      padding-right: 35px;
+    .search-bar input {
+      width: 100%;
+      padding-right: 30px;
     }
-    .clear-btn {
+    .search-bar button {
       position: absolute;
-      right: 10px;
+      right: 5px;
       top: 50%;
       transform: translateY(-50%);
+      background: none;
       border: none;
-      background: transparent;
-      font-size: 20px;
-      line-height: 1;
-      color: #999;
+      font-size: 18px;
+      color: #aaa;
       cursor: pointer;
-    }
-    .clear-btn:hover {
-      color: #333;
     }
   </style>
 </head>
 <body class="p-3">
 
-  <!-- Thanh tìm kiếm có nút X -->
-  <div class="search-wrapper mb-3">
-    <input type="text" class="form-control" id="searchBox" placeholder="Tìm kiếm sản phẩm..." oninput="filterProducts()">
-    <button class="clear-btn" onclick="clearSearch()" title="Xoá tìm kiếm">×</button>
+  <div class="search-bar">
+    <input type="text" id="searchInput" class="form-control" placeholder="Tìm sản phẩm..." oninput="renderProducts()" />
+    <button onclick="clearSearch()">×</button>
   </div>
 
   <div id="product-list">Đang tải dữ liệu...</div>
@@ -68,21 +65,18 @@
     const apiKey = 'AIzaSyDCqMkeIpx-QC7JQ1hJ4_i5Gx4hoNHvGo8';
     const range = 'Sheet1!A2:I';
 
-    let products = [];
     let allProducts = [];
+    let products = [];
 
     fetch(`https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`)
       .then(res => res.json())
       .then(data => {
-        const container = document.getElementById('product-list');
-        container.innerHTML = '';
-
         if (!data.values || data.values.length === 0) {
-          container.innerText = 'Không có dữ liệu.';
+          document.getElementById('product-list').innerText = 'Không có dữ liệu.';
           return;
         }
 
-        allProducts = data.values.map((row) => {
+        allProducts = data.values.map((row, i) => {
           const [maHang, imgUrl, tenSP, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan] = row;
           return {
             maHang, imgUrl, tenSP, canChuyen, tonKhoQuan,
@@ -91,13 +85,17 @@
           };
         });
 
-        products = allProducts;
+        products = [...allProducts];
         renderProducts();
       });
 
     function renderProducts() {
       const container = document.getElementById('product-list');
+      const searchText = document.getElementById('searchInput').value.toLowerCase();
+
       container.innerHTML = '';
+
+      products = allProducts.filter(p => p.tenSP.toLowerCase().includes(searchText));
 
       products.forEach((p, i) => {
         container.innerHTML += `
@@ -109,12 +107,11 @@
               <div class="fw-bold">${p.tenSP}</div>
               <div class="d-flex justify-content-between align-items-center">
                 <div><small>Kho tổng: ${p.tonQL1K}</small></div>
-                <div><small>${p.tonKhoQuan}</small></div>
-                <div><small>Cần chuyển: ${p.canChuyen}</small></div>
-
-                <div class="d-flex align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                  <div><small>${p.tonKhoQuan}</small></div>
+                  <div><small>Cần chuyển: ${p.canChuyen}</small></div>
                   <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
-                  <span id="qty-${i}">${p.qty}</span>
+                  <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">${p.qty}</span>
                   <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
                 </div>
               </div>
@@ -122,38 +119,62 @@
           </div>
         `;
       });
-    }
 
-    function filterProducts() {
-      const keyword = document.getElementById('searchBox').value.toLowerCase();
-      products = allProducts.filter(p =>
-        p.tenSP.toLowerCase().includes(keyword) ||
-        p.maHang.toLowerCase().includes(keyword)
-      );
-      renderProducts();
-    }
-
-    function clearSearch() {
-      document.getElementById('searchBox').value = '';
-      products = allProducts;
-      renderProducts();
+      updateTotal();
     }
 
     function changeQty(index, delta) {
-      const matchedProduct = products[index];
-      matchedProduct.qty += delta;
-      if (matchedProduct.qty < 0) matchedProduct.qty = 0;
+      products[index].qty += delta;
+      if (products[index].qty < 0) products[index].qty = 0;
+      document.getElementById(`qty-${index}`).innerText = products[index].qty;
+      updateTotal();
+    }
 
-      const globalIndex = allProducts.findIndex(p => p.maHang === matchedProduct.maHang);
-      allProducts[globalIndex].qty = matchedProduct.qty;
+    function enableEditQty(index) {
+      const span = document.getElementById(`qty-${index}`);
+      const currentQty = span.textContent;
 
-      document.getElementById(`qty-${index}`).innerText = matchedProduct.qty;
+      const input = document.createElement('input');
+      input.type = 'number';
+      input.value = currentQty;
+      input.style.width = '50px';
+      input.className = 'form-control form-control-sm';
+      input.onblur = () => saveQty(index, input.value);
+      input.onkeydown = (e) => {
+        if (e.key === 'Enter') input.blur();
+      };
+
+      span.replaceWith(input);
+      input.focus();
+    }
+
+    function saveQty(index, value) {
+      let qty = parseInt(value);
+      if (isNaN(qty) || qty < 0) qty = 0;
+
+      products[index].qty = qty;
+      const globalIndex = allProducts.findIndex(p => p.maHang === products[index].maHang);
+      allProducts[globalIndex].qty = qty;
+
+      const newSpan = document.createElement('span');
+      newSpan.id = `qty-${index}`;
+      newSpan.textContent = qty;
+      newSpan.style.cursor = 'pointer';
+      newSpan.onclick = () => enableEditQty(index);
+
+      const inputElem = document.activeElement;
+      inputElem.replaceWith(newSpan);
+
       updateTotal();
     }
 
     function resetAll() {
+      products.forEach((p, i) => {
+        p.qty = 0;
+        const span = document.getElementById(`qty-${i}`);
+        if (span) span.textContent = 0;
+      });
       allProducts.forEach(p => p.qty = 0);
-      filterProducts();
       updateTotal();
     }
 
@@ -169,6 +190,11 @@
 
       const total = selected.reduce((sum, p) => sum + p.soLuong, 0);
       document.getElementById("totalCount").innerText = total;
+    }
+
+    function clearSearch() {
+      document.getElementById("searchInput").value = "";
+      renderProducts();
     }
   </script>
 </body>
