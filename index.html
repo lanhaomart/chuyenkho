@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -63,7 +62,6 @@
       display: inline-block;
       margin-bottom: 8px;
     }
-    
   </style>
 </head>
 <body class="p-3">
@@ -98,16 +96,20 @@
           return;
         }
 
+        const stored = JSON.parse(localStorage.getItem("selectedProducts") || "[]");
+
         products = data.values.map((row, i) => {
           const [maHang, imgUrl, tenSP, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan, tonKhoLeQuan] = row;
+          const storedItem = stored.find(p => p.maHang === maHang);
           return {
             maHang, imgUrl, tenSP, canChuyen, tonKhoQuan, donViTinhTong, donViTinhLe, tonKhoLeQuan,
             tonQL1K: parseInt(tonQL1K || 0),
-            qty: 0
+            qty: storedItem ? storedItem.soLuong : 0
           };
         });
 
         renderProducts();
+        updateTotal();
       });
 
     function renderProducts() {
@@ -118,6 +120,7 @@
         row.className = 'row align-items-center mb-3';
         row.id = `product-${i}`;
         row.setAttribute('data-index', i);
+        if (p.qty > 0) row.classList.add('show-controls');
 
         row.innerHTML = `
           <div class="col-auto" onclick="activateProduct(${i})" style="cursor:pointer">
@@ -131,7 +134,7 @@
           </div>
           <div class="col-auto qty-controls">
             <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
-            <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">0</span>
+            <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">${p.qty}</span>
             <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
           </div>
         `;
@@ -147,20 +150,16 @@
       }
     }
 
-function changeQty(index, delta) {
-  products[index].qty += delta;
-  if (products[index].qty < 0) products[index].qty = 0;
-
-  document.getElementById(`qty-${index}`).innerText = products[index].qty;
-
-  const productElem = document.getElementById(`product-${index}`);
-  if (products[index].qty === 0) {
-    productElem.classList.remove('show-controls');
-  }
-
-  updateTotal();
-}
-
+    function changeQty(index, delta) {
+      products[index].qty += delta;
+      if (products[index].qty < 0) products[index].qty = 0;
+      document.getElementById(`qty-${index}`).innerText = products[index].qty;
+      const productElem = document.getElementById(`product-${index}`);
+      if (products[index].qty === 0) {
+        productElem.classList.remove('show-controls');
+      }
+      updateTotal();
+    }
 
     function enableEditQty(index) {
       const qtySpan = document.getElementById(`qty-${index}`);
@@ -178,6 +177,9 @@ function changeQty(index, delta) {
         qtySpan.innerText = val;
         qtySpan.style.display = "";
         input.replaceWith(qtySpan);
+        if (val === 0) {
+          document.getElementById(`product-${index}`).classList.remove("show-controls");
+        }
         updateTotal();
       });
 
