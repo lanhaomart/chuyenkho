@@ -93,10 +93,34 @@
   </style>
 </head>
 <body class="p-3">
-  <div class="search-bar">
+<div class="search-bar d-flex align-items-center position-relative">
+  <!-- Nút menu -->
+  <button class="btn btn-outline-secondary me-2" onclick="toggleMenu()">☰</button>
+  
+  <!-- Ô tìm kiếm -->
+  <div class="flex-grow-1 position-relative">
     <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm sản phẩm..." oninput="filterProducts()" />
     <button class="clear-btn" onclick="clearSearch()">×</button>
   </div>
+
+  <!-- Menu popup -->
+  <div id="menuPopup" style="
+    position: absolute;
+    top: 110%;
+    left: 0;
+    z-index: 1000;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    display: none;
+    min-width: 200px;
+  ">
+    <a href="index.html" class="dropdown-item px-3 py-2 d-block text-decoration-none text-dark border-bottom">Chuyển kho</a>
+    <a href="product.html" class="dropdown-item px-3 py-2 d-block text-decoration-none text-dark">Tồn kho QL1K</a>
+  </div>
+</div>
+
 
   <div id="product-list">Đang tải dữ liệu...</div>
 
@@ -258,6 +282,21 @@
       document.getElementById('searchInput').value = '';
       filterProducts();
     }
+
+    function toggleMenu() {
+      const menu = document.getElementById('menuPopup');
+      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    }
+    
+    // Ẩn menu nếu click ra ngoài
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('menuPopup');
+      if (!menu.contains(e.target) && !e.target.closest('button[onclick="toggleMenu()"]')) {
+        menu.style.display = 'none';
+      }
+    });
+
+    
   </script>
 </body>
 </html>
