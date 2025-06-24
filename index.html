@@ -61,6 +61,12 @@
       margin-bottom: 8px;
     }
 
+    .qty-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 4px;
+    
     .qty-controls {
       border: 1px solid #007bff;
       border-radius: 6px;
@@ -152,12 +158,15 @@
             <div class="fw-bold">${p.tenSP}</div>
             <div><small>Kho tổng: ${p.tonQL1K} ${p.donViTinhTong}</small></div>
             <div><small>Quán còn: ${p.tonKhoQuan} ${p.donViTinhTong} (${p.tonKhoLeQuan} ${p.donViTinhLe})</small></div>
-            <div class="canChuyen"><small>${p.canChuyen} ${p.donViTinhTong}</small></div>
           </div>
-          <div class="col-auto qty-controls">
-            <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
-            <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">${p.qty}</span>
-            <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
+
+            <div class="qty-wrapper">
+              <div class="canChuyen"><small>${p.canChuyen} ${p.donViTinhTong}</small></div>
+            <div class="col-auto qty-controls">
+              <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
+              <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">${p.qty}</span>
+              <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
+            </div>
           </div>
         `;
         container.appendChild(row);
