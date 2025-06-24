@@ -147,12 +147,20 @@
       }
     }
 
-    function changeQty(index, delta) {
-      products[index].qty += delta;
-      if (products[index].qty < 0) products[index].qty = 0;
-      document.getElementById(`qty-${index}`).innerText = products[index].qty;
-      updateTotal();
-    }
+function changeQty(index, delta) {
+  products[index].qty += delta;
+  if (products[index].qty < 0) products[index].qty = 0;
+
+  document.getElementById(`qty-${index}`).innerText = products[index].qty;
+
+  const productElem = document.getElementById(`product-${index}`);
+  if (products[index].qty === 0) {
+    productElem.classList.remove('show-controls');
+  }
+
+  updateTotal();
+}
+
 
     function enableEditQty(index) {
       const qtySpan = document.getElementById(`qty-${index}`);
