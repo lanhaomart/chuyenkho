@@ -25,6 +25,8 @@
     }
     .qty-controls {
       display: none;
+      gap: 5px;
+      align-items: center;
     }
     .show-controls .qty-controls {
       display: flex !important;
@@ -60,34 +62,6 @@
       display: inline-block;
       margin-bottom: 8px;
     }
-    .qty-wrapper {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 4px;
-    }
-    .qty-controls {
-      border: 1px solid #007bff;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    .qty-controls button,
-    .qty-controls span {
-      border: none;
-      background: none;
-      color: #007bff;
-      font-weight: bold;
-      font-size: 18px;
-      padding: 2px 10px;
-      display: inline-block;
-      text-align: center;
-    }
-    .qty-controls span {
-      min-width: 30px;
-    }
-    .qty-controls input {
-      text-align: center;
-    }
   </style>
 </head>
 <body class="p-3">
@@ -122,16 +96,20 @@
           return;
         }
 
+        const stored = JSON.parse(localStorage.getItem("selectedProducts") || "[]");
+
         products = data.values.map((row, i) => {
           const [maHang, imgUrl, tenSP, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan, tonKhoLeQuan] = row;
+          const storedItem = stored.find(p => p.maHang === maHang);
           return {
             maHang, imgUrl, tenSP, canChuyen, tonKhoQuan, donViTinhTong, donViTinhLe, tonKhoLeQuan,
             tonQL1K: parseInt(tonQL1K || 0),
-            qty: 0
+            qty: storedItem ? storedItem.soLuong : 0
           };
         });
 
         renderProducts();
+        updateTotal();
       });
 
     function renderProducts() {
@@ -139,28 +117,25 @@
       container.innerHTML = '';
       products.forEach((p, i) => {
         const row = document.createElement('div');
-        row.className = 'row align-items-start mb-3';
+        row.className = 'row align-items-center mb-3';
         row.id = `product-${i}`;
         row.setAttribute('data-index', i);
+        if (p.qty > 0) row.classList.add('show-controls');
 
         row.innerHTML = `
           <div class="col-auto" onclick="activateProduct(${i})" style="cursor:pointer">
             <img src="${p.imgUrl}" alt="${p.tenSP}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'">
           </div>
-          <div class="col">
-            <div onclick="activateProduct(${i})" style="cursor:pointer">
-              <div class="fw-bold">${p.tenSP}</div>
-              <div><small>Kho tổng: ${p.tonQL1K} ${p.donViTinhTong}</small></div>
-              <div><small>Quán còn: ${p.tonKhoQuan} ${p.donViTinhTong} (${p.tonKhoLeQuan} ${p.donViTinhLe})</small></div>
-            </div>
-            <div class="qty-wrapper">
-              <div class="canChuyen"><small>${p.canChuyen} ${p.donViTinhTong}</small></div>
-              <div class="qty-controls">
-                <button class="btn btn-sm" onclick="changeQty(${i}, -1)">−</button>
-                <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">0</span>
-                <button class="btn btn-sm" onclick="changeQty(${i}, 1)">+</button>
-              </div>
-            </div>
+          <div class="col" onclick="activateProduct(${i})" style="cursor:pointer">
+            <div class="fw-bold">${p.tenSP}</div>
+            <div><small>Kho tổng: ${p.tonQL1K} ${p.donViTinhTong}</small></div>
+            <div><small>Quán còn: ${p.tonKhoQuan} ${p.donViTinhTong} (${p.tonKhoLeQuan} ${p.donViTinhLe})</small></div>
+            <div class="canChuyen"><small>${p.canChuyen} ${p.donViTinhTong}</small></div>
+          </div>
+          <div class="col-auto qty-controls">
+            <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
+            <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">${p.qty}</span>
+            <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
           </div>
         `;
         container.appendChild(row);
@@ -178,14 +153,11 @@
     function changeQty(index, delta) {
       products[index].qty += delta;
       if (products[index].qty < 0) products[index].qty = 0;
-
       document.getElementById(`qty-${index}`).innerText = products[index].qty;
-
       const productElem = document.getElementById(`product-${index}`);
       if (products[index].qty === 0) {
         productElem.classList.remove('show-controls');
       }
-
       updateTotal();
     }
 
@@ -205,10 +177,9 @@
         qtySpan.innerText = val;
         qtySpan.style.display = "";
         input.replaceWith(qtySpan);
-
-        const productElem = document.getElementById(`product-${index}`);
-        if (val === 0) productElem.classList.remove('show-controls');
-
+        if (val === 0) {
+          document.getElementById(`product-${index}`).classList.remove("show-controls");
+        }
         updateTotal();
       });
 
