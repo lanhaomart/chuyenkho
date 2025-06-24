@@ -169,7 +169,7 @@
       container.innerHTML = '';
       products.forEach((p, i) => {
         const row = document.createElement('div');
-        row.className = 'row align-items-center mb-3';
+        row.className = 'row align-items-center mb-3 border-bottom pb-3';
         row.id = `product-${i}`;
         row.setAttribute('data-index', i);
         if (p.qty > 0) row.classList.add('show-controls');
