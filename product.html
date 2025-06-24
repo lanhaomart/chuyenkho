@@ -60,12 +60,13 @@
       display: inline-block;
       margin-bottom: 8px;
     }
+
     .qty-wrapper {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-top: 4px;
-    }
+    
     .qty-controls {
       border: 1px solid #007bff;
       border-radius: 6px;
@@ -88,13 +89,38 @@
     .qty-controls input {
       text-align: center;
     }
+    
   </style>
 </head>
 <body class="p-3">
-  <div class="search-bar">
+<div class="search-bar d-flex align-items-center position-relative">
+  <!-- Nút menu -->
+  <button class="btn btn-outline-secondary me-2" onclick="toggleMenu()">☰</button>
+  
+  <!-- Ô tìm kiếm -->
+  <div class="flex-grow-1 position-relative">
     <input type="text" id="searchInput" class="form-control" placeholder="Tìm kiếm sản phẩm..." oninput="filterProducts()" />
     <button class="clear-btn" onclick="clearSearch()">×</button>
   </div>
+
+  <!-- Menu popup -->
+  <div id="menuPopup" style="
+    position: absolute;
+    top: 110%;
+    left: 0;
+    z-index: 1000;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    display: none;
+    min-width: 200px;
+  ">
+    <a href="index.html" class="dropdown-item px-3 py-2 d-block text-decoration-none text-dark border-bottom">Chuyển kho</a>
+    <a href="product.html" class="dropdown-item px-3 py-2 d-block text-decoration-none text-dark">Tồn kho QL1K</a>
+  </div>
+</div>
+
 
   <div id="product-list">Đang tải dữ liệu...</div>
 
@@ -122,16 +148,20 @@
           return;
         }
 
+        const stored = JSON.parse(localStorage.getItem("selectedProducts") || "[]");
+
         products = data.values.map((row, i) => {
           const [maHang, imgUrl, tenSP, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan, tonKhoLeQuan] = row;
+          const storedItem = stored.find(p => p.maHang === maHang);
           return {
             maHang, imgUrl, tenSP, canChuyen, tonKhoQuan, donViTinhTong, donViTinhLe, tonKhoLeQuan,
             tonQL1K: parseInt(tonQL1K || 0),
-            qty: 0
+            qty: storedItem ? storedItem.soLuong : 0
           };
         });
 
         renderProducts();
+        updateTotal();
       });
 
     function renderProducts() {
@@ -139,26 +169,29 @@
       container.innerHTML = '';
       products.forEach((p, i) => {
         const row = document.createElement('div');
-        row.className = 'row align-items-start mb-3';
+        row.className = 'row align-items-center mb-3 border-bottom pb-3';
         row.id = `product-${i}`;
         row.setAttribute('data-index', i);
+        if (p.qty > 0) row.classList.add('show-controls');
 
         row.innerHTML = `
           <div class="col-auto" onclick="activateProduct(${i})" style="cursor:pointer">
             <img src="${p.imgUrl}" alt="${p.tenSP}" onerror="this.src='https://via.placeholder.com/100x100?text=No+Image'">
           </div>
+          
           <div class="col">
             <div onclick="activateProduct(${i})" style="cursor:pointer">
               <div class="fw-bold">${p.tenSP}</div>
               <div><small>Kho tổng: ${p.tonQL1K} ${p.donViTinhTong}</small></div>
               <div><small>Quán còn: ${p.tonKhoQuan} ${p.donViTinhTong} (${p.tonKhoLeQuan} ${p.donViTinhLe})</small></div>
             </div>
+
             <div class="qty-wrapper">
               <div class="canChuyen"><small>${p.canChuyen} ${p.donViTinhTong}</small></div>
               <div class="qty-controls">
-                <button class="btn btn-sm" onclick="changeQty(${i}, -1)">−</button>
-                <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">0</span>
-                <button class="btn btn-sm" onclick="changeQty(${i}, 1)">+</button>
+                <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
+                <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">${p.qty}</span>
+                <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
               </div>
             </div>
           </div>
@@ -178,14 +211,11 @@
     function changeQty(index, delta) {
       products[index].qty += delta;
       if (products[index].qty < 0) products[index].qty = 0;
-
       document.getElementById(`qty-${index}`).innerText = products[index].qty;
-
       const productElem = document.getElementById(`product-${index}`);
       if (products[index].qty === 0) {
         productElem.classList.remove('show-controls');
       }
-
       updateTotal();
     }
 
@@ -205,10 +235,9 @@
         qtySpan.innerText = val;
         qtySpan.style.display = "";
         input.replaceWith(qtySpan);
-
-        const productElem = document.getElementById(`product-${index}`);
-        if (val === 0) productElem.classList.remove('show-controls');
-
+        if (val === 0) {
+          document.getElementById(`product-${index}`).classList.remove("show-controls");
+        }
         updateTotal();
       });
 
@@ -253,6 +282,21 @@
       document.getElementById('searchInput').value = '';
       filterProducts();
     }
+
+    function toggleMenu() {
+      const menu = document.getElementById('menuPopup');
+      menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+    }
+    
+    // Ẩn menu nếu click ra ngoài
+    document.addEventListener('click', function(e) {
+      const menu = document.getElementById('menuPopup');
+      if (!menu.contains(e.target) && !e.target.closest('button[onclick="toggleMenu()"]')) {
+        menu.style.display = 'none';
+      }
+    });
+
+    
   </script>
 </body>
 </html>
