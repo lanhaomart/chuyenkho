@@ -60,36 +60,6 @@
       display: inline-block;
       margin-bottom: 8px;
     }
-
-    .qty-wrapper {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 4px;
-    
-    .qty-controls {
-      border: 1px solid #007bff;
-      border-radius: 6px;
-      overflow: hidden;
-    }
-    .qty-controls button,
-    .qty-controls span {
-      border: none;
-      background: none;
-      color: #007bff;
-      font-weight: bold;
-      font-size: 18px;
-      padding: 2px 10px;
-      display: inline-block;
-      text-align: center;
-    }
-    .qty-controls span {
-      min-width: 30px;
-    }
-    .qty-controls input {
-      text-align: center;
-    }
-    
   </style>
 </head>
 <body class="p-3">
@@ -184,15 +154,6 @@
               <div class="fw-bold">${p.tenSP}</div>
               <div><small>Tổng kho: ${p.tonKhoTong} ${p.donViTinhTong} - Kho QL1K: ${p.tonQL1K} ${p.donViTinhTong}</small></div>
               <div><small>Quán còn: ${p.tonKhoQuan} ${p.donViTinhTong} (${p.tonKhoLeQuan} ${p.donViTinhLe})</small></div>
-            </div>
-
-            <div class="qty-wrapper">
-              <div class="canChuyen"><small>${p.canChuyen} ${p.donViTinhTong}</small></div>
-              <div class="qty-controls">
-                <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, -1)">−</button>
-                <span id="qty-${i}" onclick="enableEditQty(${i})" style="cursor:pointer">${p.qty}</span>
-                <button class="btn btn-sm btn-primary" onclick="changeQty(${i}, 1)">+</button>
-              </div>
             </div>
           </div>
         `;
