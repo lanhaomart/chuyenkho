@@ -151,10 +151,10 @@
         const stored = JSON.parse(localStorage.getItem("selectedProducts") || "[]");
 
         products = data.values.map((row, i) => {
-          const [maHang, imgUrl, tenSP, tonKhoTong, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan, tonKhoLeQuan] = row;
+          const [maHang, imgUrl, tenSP, tonKhoTong, tongKhoLe, tonQL1K, donViTinhTong, donViTinhLe, canChuyen, tonKhoQuan, tonKhoLeQuan] = row;
           const storedItem = stored.find(p => p.maHang === maHang);
           return {
-            maHang, imgUrl, tenSP, tonKhoTong, canChuyen, tonKhoQuan, donViTinhTong, donViTinhLe, tonKhoLeQuan,
+            maHang, imgUrl, tenSP, tonKhoTong, canChuyen, tonKhoQuan, donViTinhTong, donViTinhLe, tonKhoLeQuan, tongKhoLe,
             tonQL1K: parseInt(tonQL1K || 0),
             qty: storedItem ? storedItem.soLuong : 0
           };
